@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rock Paper Scissors — beat the machine</title>
+<meta name="description" content="A handheld-style rock paper scissors game with a trash-talking robot opponent.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Archivo:wght@500;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --plum:#251830;
+    --plum-deep:#190f21;
+    --shell:#E2603F;
+    --shell-dark:#9E3A22;
+    --shell-light:#F08163;
+    --lcd:#A9BC84;
+    --lcd-line:#96AB6F;
+    --ink:#1B2412;
+    --ink-soft:#44543a;
+    --bone:#EFE3C8;
+    --bone-dark:#C4B392;
+  }
+
+  *{box-sizing:border-box;}
+
+  html,body{margin:0;padding:0;}
+
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 50% 0%, #332040 0%, var(--plum) 45%, var(--plum-deep) 100%);
+    font-family:'Archivo',system-ui,-apple-system,'Segoe UI',sans-serif;
+    color:var(--bone);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:18px;
+    padding:28px 16px 40px;
+  }
+
+  .title{
+    font-family:'Silkscreen',monospace;
+    font-size:clamp(15px,3.4vw,20px);
+    letter-spacing:.06em;
+    color:var(--bone-dark);
+    text-align:center;
+    margin:0;
+    line-height:1.7;
+  }
+  .title span{color:var(--shell-light);}
+
+  /* ---------- the device ---------- */
+  .console{
+    width:min(480px,100%);
+    background:linear-gradient(180deg,var(--shell-light) 0%,var(--shell) 22%,var(--shell) 78%,var(--shell-dark) 100%);
+    border-radius:26px 26px 40px 40px;
+    padding:20px 20px 26px;
+    box-shadow:0 14px 0 var(--shell-dark), 0 15px 40px rgba(0,0,0,.55);
+  }
+
+  .brand{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-family:'Silkscreen',monospace;
+    font-size:11px;
+    color:#41150a;
+    margin-bottom:12px;
+    padding:0 4px;
+  }
+  .brand b{font-weight:400;opacity:.65;}
+
+  /* ---------- screen ---------- */
+  .screen{
+    background:var(--lcd);
+    border:6px solid #41150a;
+    border-radius:10px;
+    padding:0;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    height:340px;
+    position:relative;
+  }
+  .screen::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    background:repeating-linear-gradient(0deg,rgba(27,36,18,.07) 0 1px,transparent 1px 3px);
+  }
+
+  .scorebar{
+    display:grid;
+    grid-template-columns:1fr auto 1fr;
+    align-items:center;
+    background:var(--lcd-line);
+    border-bottom:3px solid var(--ink);
+    padding:7px 10px;
+    font-family:'Silkscreen',monospace;
+    color:var(--ink);
+    font-size:12px;
+  }
+  .scorebar .who{display:flex;flex-direction:column;gap:2px;}
+  .scorebar .who span{font-size:9px;opacity:.72;}
+  .scorebar .who b{font-size:22px;font-weight:400;line-height:1;}
+  .scorebar .right{text-align:right;align-items:flex-end;}
+  .scorebar .mode{
+    font-size:9px;
+    border:2px solid var(--ink);
+    padding:3px 7px;
+    border-radius:3px;
+  }
+
+  .log{
+    flex:1;
+    overflow-y:auto;
+    padding:12px 14px 16px;
+    font-family:'Silkscreen',monospace;
+    font-size:12.5px;
+    line-height:1.85;
+    color:var(--ink);
+    scrollbar-width:thin;
+  }
+  .log p{margin:0 0 2px;word-break:break-word;}
+  .log .bot{color:#3b2a10;}
+  .log .win{font-weight:700;}
+  .log .lose{color:#5c2417;}
+  .log .quiet{opacity:.55;}
+  .log .big{
+    font-size:16px;
+    border-top:2px dashed var(--ink-soft);
+    border-bottom:2px dashed var(--ink-soft);
+    padding:8px 0;
+    margin:8px 0;
+    text-align:center;
+  }
+  .log .dots{letter-spacing:.14em;}
+
+  /* ---------- mode picker ---------- */
+  .modes{
+    position:absolute;
+    inset:0;
+    background:var(--lcd);
+    z-index:2;
+    padding:18px 16px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    color:var(--ink);
+  }
+  .modes h2{
+    font-family:'Silkscreen',monospace;
+    font-size:13px;
+    margin:0 0 4px;
+    line-height:1.6;
+  }
+  .mode-btn{
+    font-family:'Archivo',sans-serif;
+    font-weight:600;
+    font-size:15px;
+    text-align:left;
+    background:var(--lcd-line);
+    color:var(--ink);
+    border:3px solid var(--ink);
+    border-radius:6px;
+    padding:10px 12px;
+    cursor:pointer;
+    box-shadow:3px 3px 0 var(--ink);
+    transition:transform .08s ease;
+  }
+  .mode-btn small{display:block;font-weight:500;font-size:12px;opacity:.7;margin-top:2px;}
+  .mode-btn:hover{background:#B6C795;}
+  .mode-btn:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--ink);}
+
+  /* ---------- controls ---------- */
+  .pad{
+    margin-top:22px;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+  }
+  .key{
+    font-family:'Archivo',sans-serif;
+    font-weight:800;
+    font-size:13px;
+    letter-spacing:.02em;
+    background:var(--bone);
+    color:#41150a;
+    border:3px solid #41150a;
+    border-radius:12px;
+    padding:14px 4px 12px;
+    cursor:pointer;
+    box-shadow:0 6px 0 var(--bone-dark), 0 7px 0 #41150a;
+    transition:transform .07s ease, box-shadow .07s ease;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+  }
+  .key .glyph{font-size:26px;line-height:1;}
+  .key:hover{background:#F7EFDC;}
+  .key:active,.key.pressed{
+    transform:translateY(6px);
+    box-shadow:0 0 0 var(--bone-dark), 0 1px 0 #41150a;
+  }
+  .key[disabled]{opacity:.45;cursor:not-allowed;transform:none;}
+
+  .typerow{
+    margin-top:14px;
+    display:flex;
+    gap:8px;
+  }
+  .typerow input{
+    flex:1;
+    min-width:0;
+    font-family:'Archivo',sans-serif;
+    font-size:14px;
+    padding:11px 12px;
+    border:3px solid #41150a;
+    border-radius:10px;
+    background:#F7EFDC;
+    color:#41150a;
+  }
+  .typerow input::placeholder{color:#9a7f6a;}
+  .typerow button{
+    font-family:'Archivo',sans-serif;
+    font-weight:700;
+    font-size:13px;
+    padding:11px 16px;
+    border:3px solid #41150a;
+    border-radius:10px;
+    background:#41150a;
+    color:var(--bone);
+    cursor:pointer;
+  }
+  .typerow button:hover{background:#5c2410;}
+
+  .footnote{
+    margin-top:12px;
+    font-size:12px;
+    color:#4d1a0c;
+    text-align:center;
+    opacity:.8;
+  }
+
+  .restart{
+    display:none;
+    width:100%;
+    margin-top:14px;
+    font-family:'Archivo',sans-serif;
+    font-weight:800;
+    font-size:14px;
+    padding:14px;
+    border:3px solid #41150a;
+    border-radius:12px;
+    background:var(--bone);
+    color:#41150a;
+    cursor:pointer;
+    box-shadow:0 6px 0 var(--bone-dark), 0 7px 0 #41150a;
+  }
+  .restart:active{transform:translateY(6px);box-shadow:0 0 0 var(--bone-dark), 0 1px 0 #41150a;}
+
+  :focus-visible{outline:3px solid #fff;outline-offset:3px;}
+
+  .credit{
+    font-size:12px;
+    color:#8a7c93;
+    text-align:center;
+  }
+
+  @media (max-width:420px){
+    .screen{height:300px;}
+    .key{font-size:11px;padding:12px 2px 10px;}
+    .key .glyph{font-size:22px;}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<h1 class="title">ROCK &middot; PAPER &middot; SCISSORS<br><span>you vs. one very smug machine</span></h1>
+
+<main class="console">
+  <div class="brand"><span>RPS-3000</span><b>hand held unit</b></div>
+
+  <div class="screen">
+    <div class="scorebar">
+      <div class="who"><span>YOU</span><b id="youScore">0</b></div>
+      <div class="mode" id="modeTag">— —</div>
+      <div class="who right"><span>ROBOT</span><b id="botScore">0</b></div>
+    </div>
+    <div class="log" id="log" aria-live="polite" role="log"></div>
+
+    <div class="modes" id="modes">
+      <h2>PICK A GAME MODE</h2>
+      <button class="mode-btn" data-target="5">Classic<small>First to 5 points wins</small></button>
+      <button class="mode-btn" data-target="1">Sudden death<small>One round decides it</small></button>
+      <button class="mode-btn" data-target="Infinity">Endless<small>Play until you stop</small></button>
+    </div>
+  </div>
+
+  <div class="pad">
+    <button class="key" data-move="rock" disabled><span class="glyph">🗿</span>ROCK</button>
+    <button class="key" data-move="paper" disabled><span class="glyph">📃</span>PAPER</button>
+    <button class="key" data-move="scissors" disabled><span class="glyph">✂️</span>SCISSORS</button>
+  </div>
+
+  <div class="typerow">
+    <input id="typed" type="text" placeholder="…or type your move" autocomplete="off" spellcheck="false" disabled>
+    <button id="send" disabled>PLAY</button>
+  </div>
+
+  <p class="footnote">Typos are forgiven. Unconventional weapons are not. (Or are they?)</p>
+
+  <button class="restart" id="restart">PLAY AGAIN</button>
+</main>
+
+<p class="credit">Built from a Python terminal game.</p>
+
+<script>
+(function(){
+  "use strict";
+
+  var MOVES = ["rock","paper","scissors"];
+  var GLYPH = {rock:"🗿", paper:"📃", scissors:"✂️"};
+
+  var BOT_WIN = ["Too easy!!!", "That all you got?", "I predicted that."];
+  var BOT_LOSS = [
+    "Wait… my sensors must be malfunctioning!",
+    "You got lucky. Next time I won't be so nice.",
+    "Impossible! Did you hack my source code?!"
+  ];
+  var BOT_DRAW = [
+    "Great minds think alike… or we're both just basic.",
+    "A stalemate. Fascinating.",
+    "Stop copying my circuits!"
+  ];
+
+  var logEl = document.getElementById("log");
+  var modesEl = document.getElementById("modes");
+  var youScoreEl = document.getElementById("youScore");
+  var botScoreEl = document.getElementById("botScore");
+  var modeTagEl = document.getElementById("modeTag");
+  var typedEl = document.getElementById("typed");
+  var sendEl = document.getElementById("send");
+  var restartEl = document.getElementById("restart");
+  var keys = Array.prototype.slice.call(document.querySelectorAll(".key"));
+
+  var target = 5;
+  var you = 0;
+  var bot = 0;
+  var busy = false;
+  var over = false;
+
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function sleep(ms){
+    return new Promise(function(res){ setTimeout(res, reduced ? Math.min(ms, 40) : ms); });
+  }
+
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  function say(text, cls){
+    var p = document.createElement("p");
+    if(cls){ p.className = cls; }
+    p.textContent = text;
+    logEl.appendChild(p);
+    logEl.scrollTop = logEl.scrollHeight;
+    return p;
+  }
+
+  function blank(){ say("\u00A0"); }
+
+  // Adds characters one at a time to an existing line — the "…🎲…🎲" suspense.
+  async function suspense(chars){
+    var p = say("", "dots");
+    for(var i=0;i<chars.length;i++){
+      p.textContent += chars[i];
+      logEl.scrollTop = logEl.scrollHeight;
+      await sleep(chars[i] === "🎲" ? 260 : 190);
+    }
+  }
+
+  // Stand-in for Python's difflib.get_close_matches(cutoff=0.6)
+  function closestMove(word){
+    var best = null, bestScore = 0;
+    for(var i=0;i<MOVES.length;i++){
+      var s = similarity(word, MOVES[i]);
+      if(s > bestScore){ bestScore = s; best = MOVES[i]; }
+    }
+    return bestScore >= 0.6 ? best : null;
+  }
+
+  function similarity(a,b){
+    if(!a.length || !b.length){ return 0; }
+    var dist = levenshtein(a,b);
+    return 1 - dist / Math.max(a.length, b.length);
+  }
+
+  function levenshtein(a,b){
+    var prev = [], cur = [], i, j;
+    for(j=0;j<=b.length;j++){ prev[j] = j; }
+    for(i=1;i<=a.length;i++){
+      cur[0] = i;
+      for(j=1;j<=b.length;j++){
+        var cost = a.charAt(i-1) === b.charAt(j-1) ? 0 : 1;
+        cur[j] = Math.min(cur[j-1]+1, prev[j]+1, prev[j-1]+cost);
+      }
+      prev = cur.slice();
+    }
+    return prev[b.length];
+  }
+
+  function setControls(on){
+    keys.forEach(function(k){ k.disabled = !on; });
+    typedEl.disabled = !on;
+    sendEl.disabled = !on;
+  }
+
+  function updateScores(){
+    youScoreEl.textContent = you;
+    botScoreEl.textContent = bot === Infinity ? "∞" : bot;
+  }
+
+  async function showScores(){
+    blank();
+    await sleep(400);
+    say("YOUR SCORE " + you + "   |   ROBOT " + bot);
+    updateScores();
+    await sleep(500);
+  }
+
+  function checkGameOver(){
+    if(you >= target || bot >= target){
+      over = true;
+      blank();
+      if(you >= target){
+        say("🏆 YOU WON THE GAME! 🏆", "big win");
+      } else {
+        say("😔 You lost the game. 😔", "big lose");
+      }
+      setControls(false);
+      restartEl.style.display = "block";
+      restartEl.focus();
+      return true;
+    }
+    return false;
+  }
+
+  async function nukeRound(word){
+    if(word === "nuke"){
+      say("You deployed a NUKE.");
+    } else {
+      say("You pulled out a GUN.");
+    }
+    await sleep(500);
+    say("🤖: WAIT THAT'S ILLEGAL!! — *BOOM*", "bot");
+    you += 1;
+    await showScores();
+    checkGameOver();
+  }
+
+  async function playRound(word){
+    if(busy || over){ return; }
+    busy = true;
+    setControls(false);
+
+    if(word === ""){
+      say("Oops — you forgot to choose.", "quiet");
+      busy = false; setControls(true);
+      return;
+    }
+
+    if(word === "nuke" || word === "gun"){
+      await nukeRound(word);
+      busy = false;
+      if(!over){ setControls(true); }
+      return;
+    }
+
+    if(word === "q" || word === "quit"){
+      say("Play later!!", "quiet");
+      over = true;
+      setControls(false);
+      restartEl.style.display = "block";
+      busy = false;
+      return;
+    }
+
+    var human = MOVES.indexOf(word) > -1 ? word : closestMove(word);
+    if(!human){
+      say("Not a move. Try rock, paper or scissors.", "quiet");
+      busy = false; setControls(true);
+      return;
+    }
+
+    var comp = pick(MOVES);
+
+    blank();
+    say("You chose " + human + " " + GLYPH[human]);
+    await sleep(600);
+    await suspense([".",".","🎲",".",".","🎲"]);
+    say("Your opponent chose " + comp + " " + GLYPH[comp]);
+    await suspense([".",".",".",".",".","."]);
+
+    if(human === comp){
+      say("Draw 🤝");
+      blank();
+      say("🤖: " + pick(BOT_DRAW), "bot");
+    } else if(
+      (human === "rock" && comp === "scissors") ||
+      (human === "paper" && comp === "rock") ||
+      (human === "scissors" && comp === "paper")
+    ){
+      say("YOU WIN!!! 🏆", "win");
+      blank();
+      say("🤖: " + pick(BOT_LOSS), "bot");
+      you += 1;
+    } else {
+      say("Your opponent wins!! 🤖", "lose");
+      blank();
+      say("🤖: " + pick(BOT_WIN), "bot");
+      bot += 1;
+    }
+
+    await showScores();
+    var done = checkGameOver();
+    busy = false;
+    if(!done){ setControls(true); }
+  }
+
+  // --- input wiring ---
+  keys.forEach(function(k){
+    k.addEventListener("click", function(){
+      playRound(k.getAttribute("data-move"));
+    });
+  });
+
+  function submitTyped(){
+    var v = typedEl.value.toLowerCase().trim();
+    typedEl.value = "";
+    playRound(v);
+  }
+  sendEl.addEventListener("click", submitTyped);
+  typedEl.addEventListener("keydown", function(e){
+    if(e.key === "Enter"){ submitTyped(); }
+  });
+
+  // Keyboard shortcuts: r / p / s
+  document.addEventListener("keydown", function(e){
+    if(document.activeElement === typedEl){ return; }
+    var map = {r:"rock", p:"paper", s:"scissors"};
+    var move = map[e.key.toLowerCase()];
+    if(move){
+      var btn = document.querySelector('.key[data-move="'+move+'"]');
+      if(btn && !btn.disabled){
+        btn.classList.add("pressed");
+        setTimeout(function(){ btn.classList.remove("pressed"); }, 120);
+        playRound(move);
+      }
+    }
+  });
+
+  modesEl.addEventListener("click", function(e){
+    var btn = e.target.closest(".mode-btn");
+    if(!btn){ return; }
+    var raw = btn.getAttribute("data-target");
+    target = raw === "Infinity" ? Infinity : parseInt(raw,10);
+    modesEl.style.display = "none";
+    modeTagEl.textContent = target === Infinity ? "ENDLESS" : (target === 1 ? "SUDDEN DEATH" : "FIRST TO 5");
+    logEl.innerHTML = "";
+    say(target === Infinity ? "♾️ ENDLESS MODE ♾️" : (target === 1 ? "🏆 SUDDEN DEATH 🏆" : "🏆 CLASSIC MODE 🏆"), "big");
+    say("🤖: Boot sequence complete. Make your move.", "bot");
+    setControls(true);
+    typedEl.focus();
+  });
+
+  restartEl.addEventListener("click", function(){
+    you = 0; bot = 0; over = false; busy = false;
+    updateScores();
+    logEl.innerHTML = "";
+    restartEl.style.display = "none";
+    modesEl.style.display = "flex";
+    modeTagEl.textContent = "— —";
+    setControls(false);
+  });
+
+})();
+</script>
+</body>
+</html>
