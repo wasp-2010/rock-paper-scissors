@@ -606,6 +606,13 @@
       <button class="mode-btn" id="closeAchv" type="button">Back</button>
     </div>
 
+    <div class="panel" id="confirmPanel" style="display:none;">
+      <h2>RETURN TO MENU?</h2>
+      <p style="text-align:center;font-size:13px;margin:0 0 4px;">Current game progress will be lost.</p>
+      <button class="mode-btn" id="confirmLeave" type="button">Leave game</button>
+      <button class="mode-btn" id="confirmCancel" type="button">Cancel</button>
+    </div>
+
     <div class="toast" id="toast"><span class="icon" id="toastIcon">🏆</span><span id="toastText"></span></div>
   </div>
 
@@ -682,6 +689,7 @@
   var toastIconEl = document.getElementById("toastIcon");
   var toastTextEl = document.getElementById("toastText");
   var gameoverEl = document.getElementById("gameover");
+  var confirmPanel = document.getElementById("confirmPanel");
   var goIcon = document.getElementById("goIcon");
   var goMsg = document.getElementById("goMsg");
   var goSub = document.getElementById("goSub");
@@ -1138,16 +1146,11 @@
     modesEl.style.display = "flex";
   });
 
-  homeBtn.addEventListener("click", function(){
-    var midGame = !over && (you > 0 || bot > 0) && startScreen.style.display === "none" &&
-                  difficultyPanel.style.display === "none" && modesEl.style.display === "none" &&
-                  achvPanel.style.display === "none";
-    if(midGame && !window.confirm("Return to the main menu? Current game progress will be lost.")){
-      return;
-    }
+  function goToMenu(){
     difficultyPanel.style.display = "none";
     modesEl.style.display = "none";
     achvPanel.style.display = "none";
+    confirmPanel.style.display = "none";
     gameoverEl.style.display = "none";
     restartEl.style.display = "none";
     you = 0; bot = 0; over = false; busy = false;
@@ -1157,6 +1160,22 @@
     setControls(false);
     renderStats();
     startScreen.style.display = "flex";
+  }
+
+  homeBtn.addEventListener("click", function(){
+    var midGame = !over && (you > 0 || bot > 0) && startScreen.style.display === "none" &&
+                  difficultyPanel.style.display === "none" && modesEl.style.display === "none" &&
+                  achvPanel.style.display === "none";
+    if(midGame){
+      confirmPanel.style.display = "flex";
+      return;
+    }
+    goToMenu();
+  });
+
+  document.getElementById("confirmLeave").addEventListener("click", goToMenu);
+  document.getElementById("confirmCancel").addEventListener("click", function(){
+    confirmPanel.style.display = "none";
   });
 
   // ---------- init ----------
