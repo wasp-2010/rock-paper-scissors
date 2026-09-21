@@ -734,6 +734,101 @@
   }
   function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
 
+  // ---------- synthesized sound effects (no audio files needed) ----------
+  var audioCtx = null;
+  function getAudio(){
+    try{
+      if(!audioCtx){
+        var Ctx = window.AudioContext || window.webkitAudioContext;
+        if(!Ctx){ return null; }
+        audioCtx = new Ctx();
+      }
+      if(audioCtx.state === "suspended"){ audioCtx.resume(); }
+      return audioCtx;
+    }catch(e){ return null; }
+  }
+  function noiseBuffer(ctx, seconds, power){
+    var size = Math.max(1, Math.floor(ctx.sampleRate * seconds));
+    var buffer = ctx.createBuffer(1, size, ctx.sampleRate);
+    var data = buffer.getChannelData(0);
+    for(var i=0;i<size;i++){
+      data[i] = (Math.random()*2-1) * Math.pow(1 - i/size, power || 1);
+    }
+    return buffer;
+  }
+
+  function playNukeSound(){
+    var ctx = getAudio(); if(!ctx){ return; }
+    try{
+      var now = ctx.currentTime;
+      // low sweeping boom
+      var osc = ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(160, now);
+      osc.frequency.exponentialRampToValueAtTime(28, now + 0.65);
+      var oGain = ctx.createGain();
+      oGain.gain.setValueAtTime(0.0001, now);
+      oGain.gain.exponentialRampToValueAtTime(0.55, now + 0.04);
+      oGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.95);
+      osc.connect(oGain); oGain.connect(ctx.destination);
+      osc.start(now); osc.stop(now + 1);
+      // crack of noise on top
+      var noise = ctx.createBufferSource();
+      noise.buffer = noiseBuffer(ctx, 0.4, 2);
+      var filt = ctx.createBiquadFilter();
+      filt.type = "lowpass"; filt.frequency.value = 900;
+      var nGain = ctx.createGain();
+      nGain.gain.setValueAtTime(0.5, now);
+      nGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
+      noise.connect(filt); filt.connect(nGain); nGain.connect(ctx.destination);
+      noise.start(now);
+    }catch(e){}
+  }
+
+  function playGunSound(){
+    var ctx = getAudio(); if(!ctx){ return; }
+    try{
+      var now = ctx.currentTime;
+      var noise = ctx.createBufferSource();
+      noise.buffer = noiseBuffer(ctx, 0.15, 3);
+      var filt = ctx.createBiquadFilter();
+      filt.type = "highpass"; filt.frequency.value = 650;
+      var nGain = ctx.createGain();
+      nGain.gain.setValueAtTime(0.8, now);
+      nGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+      noise.connect(filt); filt.connect(nGain); nGain.connect(ctx.destination);
+      noise.start(now);
+      var osc = ctx.createOscillator();
+      osc.type = "square";
+      osc.frequency.setValueAtTime(130, now);
+      osc.frequency.exponentialRampToValueAtTime(45, now + 0.1);
+      var oGain = ctx.createGain();
+      oGain.gain.setValueAtTime(0.3, now);
+      oGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
+      osc.connect(oGain); oGain.connect(ctx.destination);
+      osc.start(now); osc.stop(now + 0.1);
+    }catch(e){}
+  }
+
+  function playLaserSound(){
+    var ctx = getAudio(); if(!ctx){ return; }
+    try{
+      var now = ctx.currentTime;
+      var osc = ctx.createOscillator();
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(1900, now);
+      osc.frequency.exponentialRampToValueAtTime(200, now + 0.32);
+      var gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.32, now + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(now); osc.stop(now + 0.36);
+    }catch(e){}
+  }
+
+  var SECRET_SOUNDS = {nuke: playNukeSound, gun: playGunSound, laser: playLaserSound};
+
   // ---------- skins ----------
   function applySkin(name){
     consoleEl.setAttribute("data-skin", name);
@@ -828,10 +923,37 @@
     return prev[b.length];
   }
 
+  // idle animation: while waiting on the player, both sides gently
+  // rotate through rock/paper/scissors, same as the pre-reveal shuffle.
+  var idleTimer = null, idleIndex = 0;
+  function idleTick(){
+    var icon = GLYPH[MOVES[idleIndex % 3]];
+    idleIndex += 1;
+    youWeapon.className = "weapon";
+    botWeapon.className = "weapon";
+    youWeapon.textContent = icon;
+    botWeapon.textContent = icon;
+    if(!reduced){
+      void youWeapon.offsetWidth;
+      youWeapon.classList.add("pop");
+      botWeapon.classList.add("pop");
+    }
+  }
+  function startIdle(){
+    if(idleTimer){ return; }
+    idleIndex = 0;
+    idleTick();
+    idleTimer = setInterval(idleTick, 550);
+  }
+  function stopIdle(){
+    if(idleTimer){ clearInterval(idleTimer); idleTimer = null; }
+  }
+
   function setControls(on){
     keys.forEach(function(k){ k.disabled = !on; });
     typedEl.disabled = !on;
     sendEl.disabled = !on;
+    if(on){ startIdle(); } else { stopIdle(); }
   }
   function updateScores(){
     youScoreEl.textContent = you;
@@ -942,6 +1064,7 @@
     if(save.secretsUsed === 5){ unlock("nuker"); }
 
     showWeapon(youWeapon, secret.glyph, true);
+    getAudio(); // create/resume the audio context now, while we still have the user gesture
     setBanner(secret.verb, "🤖 calculating a response…");
     await suspenseSecret(secret);
 
@@ -955,6 +1078,7 @@
       botLabel.textContent = secret.counterName;
       setBanner("COUNTERED! 🤖", secret.counterMsg, "lose");
       await sleep(650);
+      if(SECRET_SOUNDS[word]){ SECRET_SOUNDS[word](); }
       await detonate(youWeapon);
       bot += 1;
       updateScores();
@@ -964,6 +1088,7 @@
       showWeapon(botWeapon, GLYPH[defMove], true);
       setBanner(secret.verb, "🤖 tries " + defMove.toUpperCase() + "… not enough!");
       await sleep(600);
+      if(SECRET_SOUNDS[word]){ SECRET_SOUNDS[word](); }
       await detonate(botWeapon);
       setBanner("💥 *BOOM* 💥", "The computer has left the building.", "win");
       you += 1;
