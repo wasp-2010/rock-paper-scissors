@@ -3,1312 +3,229 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rock Paper Scissors — beat the computer</title>
-<meta name="description" content="A handheld-style rock paper scissors game against the computer, with secret weapons, difficulty modes, skins and achievements.">
+<title>Mini Games</title>
+<meta name="description" content="A small collection of browser mini-games.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Archivo:wght@500;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@700&family=Archivo:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --plum:#251830;
-    --plum-deep:#190f21;
-    --shell:#E2603F;
-    --shell-dark:#9E3A22;
-    --shell-light:#F08163;
-    --lcd:#A9BC84;
-    --lcd-line:#96AB6F;
-    --ink:#1B2412;
-    --ink-soft:#44543a;
-    --bone:#EFE3C8;
-    --bone-dark:#C4B392;
+    --ink:#1B1620;
+    --ink-soft:#6b6675;
+    --line:#E7E3ED;
+    --card:#FAF9FC;
+    --accent:#E2603F;
+    --accent-dark:#9E3A22;
   }
-
-  /* ---------- skins ---------- */
-  [data-skin="mint"]{
-    --shell:#3FA793;
-    --shell-dark:#236457;
-    --shell-light:#6FCBB8;
-  }
-  [data-skin="grape"]{
-    --shell:#7C5CC4;
-    --shell-dark:#4A3389;
-    --shell-light:#A488DE;
-  }
-  [data-skin="night"]{
-    --shell:#3A3A42;
-    --shell-dark:#1C1C22;
-    --shell-light:#57575F;
-    --lcd:#8FA0C7;
-    --lcd-line:#7C8FB8;
-    --ink:#101526;
-    --ink-soft:#374266;
-  }
-
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
-
   body{
     min-height:100vh;
-    background:radial-gradient(circle at 50% 0%, #332040 0%, var(--plum) 45%, var(--plum-deep) 100%);
+    background:#FFFFFF;
+    color:var(--ink);
     font-family:'Archivo',system-ui,-apple-system,'Segoe UI',sans-serif;
-    color:var(--bone);
     display:flex;
     flex-direction:column;
     align-items:center;
-    justify-content:center;
-    gap:18px;
-    padding:28px 16px 40px;
+    padding:56px 20px 60px;
   }
 
-  .title{
-    font-family:'Silkscreen',monospace;
-    font-size:clamp(15px,3.4vw,20px);
-    letter-spacing:.06em;
-    color:var(--bone-dark);
+  header{
     text-align:center;
-    margin:0;
-    line-height:1.7;
+    margin-bottom:40px;
+    max-width:520px;
   }
-  .title span{color:var(--shell-light);}
-
-  /* ---------- the device ---------- */
-  .console{
-    width:min(480px,100%);
-    background:linear-gradient(180deg,var(--shell-light) 0%,var(--shell) 22%,var(--shell) 78%,var(--shell-dark) 100%);
-    border-radius:26px 26px 40px 40px;
-    padding:20px 20px 26px;
-    box-shadow:0 14px 0 var(--shell-dark), 0 15px 40px rgba(0,0,0,.55);
-    transition:background .3s ease;
-  }
-
-  .brand{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
+  header .eyebrow{
     font-family:'Silkscreen',monospace;
     font-size:11px;
-    color:#41150a;
-    margin-bottom:12px;
-    padding:0 4px;
+    letter-spacing:.14em;
+    color:var(--accent-dark);
+    text-transform:uppercase;
   }
-  .brand b{font-weight:400;opacity:.65;}
-  .home-btn{
-    font-family:'Silkscreen',monospace;
-    font-size:14px;
-    background:none;
-    border:none;
-    color:#41150a;
-    cursor:pointer;
-    padding:2px 4px;
-    line-height:1;
-  }
-  .home-btn:hover{opacity:.65;}
-
-  /* ---------- screen ---------- */
-  .screen{
-    background:var(--lcd);
-    border:6px solid #41150a;
-    border-radius:10px;
-    overflow:hidden;
-    display:flex;
-    flex-direction:column;
-    height:340px;
-    position:relative;
-    transition:background .3s ease;
-  }
-  .screen::after{
-    content:"";
-    position:absolute;
-    inset:0;
-    pointer-events:none;
-    background:repeating-linear-gradient(0deg,rgba(27,36,18,.07) 0 1px,transparent 1px 3px);
+  header h1{
+    font-size:clamp(28px,5vw,38px);
+    margin:10px 0 0;
+    letter-spacing:-.01em;
   }
 
-  .scorebar{
-    display:grid;
-    grid-template-columns:1fr auto 1fr;
-    align-items:center;
-    background:var(--lcd-line);
-    border-bottom:3px solid var(--ink);
-    padding:7px 10px;
-    font-family:'Silkscreen',monospace;
-    color:var(--ink);
-    font-size:12px;
-  }
-  .scorebar .who{display:flex;flex-direction:column;gap:2px;}
-  .scorebar .who span{font-size:9px;opacity:.72;}
-  .scorebar .who b{font-size:22px;font-weight:400;line-height:1;}
-  .scorebar .right{text-align:right;align-items:flex-end;}
-  .scorebar .mode{
-    font-size:8px;
-    border:2px solid var(--ink);
-    padding:3px 6px;
-    border-radius:3px;
-    white-space:nowrap;
-  }
-
-  /* ---------- the arena: two big weapons ---------- */
-  .arena{
-    flex:1;
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    position:relative;
-    min-height:0;
-  }
-  .side{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    gap:6px;
-    padding:8px;
-    min-width:0;
-  }
-  .side.you{border-right:3px dashed var(--ink-soft);}
-
-  .side .label{
-    font-family:'Silkscreen',monospace;
-    font-size:10px;
-    color:var(--ink);
-    opacity:.75;
-  }
-  .weapon{
-    font-size:clamp(64px,19vw,92px);
-    line-height:1;
-    filter:drop-shadow(3px 4px 0 rgba(27,36,18,.28));
-  }
-  .side.you .weapon{transform:scaleX(-1);}
-  .weapon.empty{opacity:.25;}
-  .weapon.shake{animation:shake .32s ease-in-out infinite;}
-  .side.you .weapon.shake{animation:shakeFlip .32s ease-in-out infinite;}
-  @keyframes shake{
-    0%,100%{transform:rotate(-12deg) translateY(0);}
-    50%{transform:rotate(8deg) translateY(-10px);}
-  }
-  @keyframes shakeFlip{
-    0%,100%{transform:scaleX(-1) rotate(-12deg) translateY(0);}
-    50%{transform:scaleX(-1) rotate(8deg) translateY(-10px);}
-  }
-  .weapon.pop{animation:pop .3s ease-out;}
-  @keyframes pop{
-    0%{transform:scale(.6);}
-    60%{transform:scale(1.14);}
-    100%{transform:scale(1);}
-  }
-  .side.you .weapon.pop{animation:popFlip .3s ease-out;}
-  @keyframes popFlip{
-    0%{transform:scaleX(-1) scale(.6);}
-    60%{transform:scaleX(-1) scale(1.14);}
-    100%{transform:scaleX(-1) scale(1);}
-  }
-
-  .weapon.blast{animation:blast 1.3s cubic-bezier(.2,.8,.3,1) forwards;}
-  @keyframes blast{
-    0%{transform:scale(.7) rotate(0deg);opacity:1;}
-    20%{transform:scale(2.3) rotate(10deg);opacity:1;}
-    45%{transform:scale(1.9) rotate(-8deg);opacity:1;}
-    70%{transform:scale(1.6) rotate(6deg);opacity:.75;}
-    100%{transform:scale(.3) rotate(-30deg);opacity:0;}
-  }
-  .weapon.wreck{opacity:.55;filter:grayscale(1) drop-shadow(3px 4px 0 rgba(27,36,18,.28));}
-
-  .flash{
-    position:absolute;
-    inset:0;
-    background:#fff6d8;
-    opacity:0;
-    pointer-events:none;
-    z-index:2;
-  }
-  .flash.go{animation:flash 1.1s ease-out;}
-  @keyframes flash{
-    0%{opacity:0;}
-    10%{opacity:.92;}
-    40%{opacity:.35;}
-    100%{opacity:0;}
-  }
-  .arena.quake{animation:quake 1s ease-in-out;}
-  @keyframes quake{
-    0%,100%{transform:translate(0,0);}
-    10%{transform:translate(-5px,4px);}
-    20%{transform:translate(6px,-4px);}
-    30%{transform:translate(-4px,-3px);}
-    40%{transform:translate(4px,3px);}
-    50%{transform:translate(-3px,2px);}
-    60%{transform:translate(3px,-2px);}
-    70%{transform:translate(-2px,2px);}
-    80%{transform:translate(2px,-1px);}
-  }
-
-  .vs{
-    position:absolute;
-    top:50%;
-    left:50%;
-    transform:translate(-50%,-50%);
-    font-family:'Silkscreen',monospace;
-    font-size:13px;
-    color:var(--ink);
-    background:var(--lcd);
-    border:3px solid var(--ink);
-    border-radius:50%;
-    width:42px;
-    height:42px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    z-index:1;
-  }
-
-  .banner{
-    border-top:3px solid var(--ink);
-    background:var(--lcd-line);
-    padding:9px 12px 11px;
-    text-align:center;
-    color:var(--ink);
-    min-height:74px;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    gap:4px;
-  }
-  .banner .verdict{
-    font-family:'Silkscreen',monospace;
-    font-size:14px;
-    line-height:1.4;
-  }
-  .banner .quip{
-    font-size:13px;
-    font-weight:500;
-    line-height:1.35;
-  }
-  .banner.win .verdict{color:#1f3d10;}
-  .banner.lose .verdict{color:#6b2313;}
-
-  /* ---------- overlay panels (start / difficulty / mode / achievements) ---------- */
-  .panel{
-    position:absolute;
-    inset:0;
-    background:var(--lcd);
-    z-index:3;
-    padding:16px 16px;
-    display:flex;
-    flex-direction:column;
-    gap:9px;
-    color:var(--ink);
-    overflow-y:auto;
-  }
-  .panel h2{
-    font-family:'Silkscreen',monospace;
-    font-size:13px;
-    margin:0 0 2px;
-    line-height:1.6;
-    text-align:center;
-  }
-  .mode-btn{
-    font-family:'Archivo',sans-serif;
-    font-weight:600;
-    font-size:15px;
-    text-align:left;
-    background:var(--lcd-line);
-    color:var(--ink);
-    border:3px solid var(--ink);
-    border-radius:6px;
-    padding:10px 12px;
-    cursor:pointer;
-    box-shadow:3px 3px 0 var(--ink);
-    transition:transform .08s ease;
-  }
-  .mode-btn small{display:block;font-weight:500;font-size:12px;opacity:.7;margin-top:2px;}
-  .mode-btn:hover{background:#B6C795;}
-  .mode-btn:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--ink);}
-
-  .stats{
-    display:flex;
-    justify-content:center;
-    gap:22px;
-    font-family:'Silkscreen',monospace;
-    margin:2px 0 4px;
-  }
-  .stats div{display:flex;flex-direction:column;align-items:center;gap:3px;}
-  .stats span{font-size:9px;opacity:.7;}
-  .stats b{font-size:22px;font-weight:400;}
-
-  .skinrow{
-    display:flex;
-    justify-content:center;
-    gap:12px;
-    margin:2px 0 6px;
-  }
-  .swatch{
-    width:30px;
-    height:30px;
-    border-radius:50%;
-    border:3px solid #41150a;
-    cursor:pointer;
-    padding:0;
-  }
-  .swatch.active{outline:3px solid var(--ink);outline-offset:2px;}
-
-  .achv-link{
-    align-self:center;
-    font-family:'Archivo',sans-serif;
-    font-weight:700;
-    font-size:12px;
-    background:none;
-    border:2px solid var(--ink);
-    border-radius:20px;
-    padding:6px 16px;
-    color:var(--ink);
-    cursor:pointer;
-    margin:2px 0 4px;
-  }
-  .achv-link:hover{background:var(--lcd-line);}
-
-  .achv-list{
-    flex:1;
-    overflow-y:auto;
-    display:flex;
-    flex-direction:column;
-    gap:7px;
-    min-height:0;
-  }
-  .achv-item{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    border:2px solid var(--ink);
-    border-radius:6px;
-    padding:7px 9px;
-    background:var(--lcd-line);
-  }
-  .achv-item.locked{opacity:.5;filter:grayscale(1);}
-  .achv-item .icon{font-size:21px;width:26px;text-align:center;flex-shrink:0;}
-  .achv-item .info{display:flex;flex-direction:column;min-width:0;}
-  .achv-item .info b{font-size:11px;font-family:'Silkscreen',monospace;}
-  .achv-item .info span{font-size:11px;line-height:1.3;}
-
-  /* ---------- game over card ---------- */
-  .gameover{
-    position:absolute;
-    inset:0;
-    background:var(--lcd);
-    z-index:2;
-    display:none;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    gap:10px;
-    color:var(--ink);
-    text-align:center;
-    padding:20px;
-  }
-  .gameover .big{font-size:56px;line-height:1;}
-  .gameover .msg{font-family:'Silkscreen',monospace;font-size:15px;line-height:1.6;}
-  .gameover .sub{font-size:13px;opacity:.75;}
-
-  /* ---------- toast ---------- */
-  .toast{
-    position:absolute;
-    top:10px;
-    left:50%;
-    transform:translate(-50%,-140%);
-    background:#2b1810;
-    color:#F7EFDC;
-    border:2px solid #000;
-    border-radius:8px;
-    padding:8px 14px;
-    font-family:'Silkscreen',monospace;
-    font-size:10.5px;
-    display:flex;
-    align-items:center;
-    gap:8px;
-    z-index:6;
-    opacity:0;
-    transition:transform .35s ease, opacity .35s ease;
-    pointer-events:none;
-    max-width:86%;
-    text-align:left;
-  }
-  .toast.show{transform:translate(-50%,0%);opacity:1;}
-  .toast .icon{font-size:16px;}
-
-  /* ---------- controls ---------- */
-  .pad{
-    margin-top:22px;
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:12px;
-  }
-  .key{
-    font-family:'Archivo',sans-serif;
-    font-weight:800;
-    font-size:13px;
-    background:var(--bone);
-    color:#41150a;
-    border:3px solid #41150a;
-    border-radius:12px;
-    padding:14px 4px 12px;
-    cursor:pointer;
-    box-shadow:0 6px 0 var(--bone-dark), 0 7px 0 #41150a;
-    transition:transform .07s ease, box-shadow .07s ease;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:6px;
-  }
-  .key .glyph{font-size:26px;line-height:1;}
-  .key:hover{background:#F7EFDC;}
-  .key:active,.key.pressed{
-    transform:translateY(6px);
-    box-shadow:0 0 0 var(--bone-dark), 0 1px 0 #41150a;
-  }
-  .key[disabled]{opacity:.45;cursor:not-allowed;transform:none;}
-
-  .typerow{margin-top:14px;display:flex;gap:8px;}
-  .typerow input{
-    flex:1;
-    min-width:0;
-    font-family:'Archivo',sans-serif;
-    font-size:14px;
-    padding:11px 12px;
-    border:3px solid #41150a;
-    border-radius:10px;
-    background:#F7EFDC;
-    color:#41150a;
-  }
-  .typerow input::placeholder{color:#9a7f6a;}
-  .typerow button{
-    font-family:'Archivo',sans-serif;
-    font-weight:700;
-    font-size:13px;
-    padding:11px 16px;
-    border:3px solid #41150a;
-    border-radius:10px;
-    background:#41150a;
-    color:var(--bone);
-    cursor:pointer;
-  }
-  .typerow button:hover{background:#5c2410;}
-
-  .footnote{
-    margin-top:12px;
-    font-size:12px;
-    color:#4d1a0c;
-    text-align:center;
-    opacity:.8;
-  }
-
-  .restart{
-    display:none;
+  .grid{
     width:100%;
-    margin-top:14px;
+    max-width:920px;
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+    gap:20px;
+    align-items:stretch;
+  }
+
+  .card{
+    display:flex;
+    flex-direction:column;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:18px;
+    overflow:hidden;
+    text-decoration:none;
+    color:var(--ink);
+    transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  }
+  .card:hover{
+    transform:translateY(-4px);
+    border-color:var(--accent);
+    box-shadow:0 14px 28px rgba(27,22,32,.08);
+  }
+  .card:focus-visible{
+    outline:3px solid var(--accent);
+    outline-offset:3px;
+  }
+
+  .card-image{
+    width:100%;
+    aspect-ratio:400/220;
+    display:block;
+    background:#2b1a3d;
+  }
+  .card-image svg{
+    width:100%;
+    height:100%;
+    display:block;
+  }
+
+  .card-body{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    padding:20px 22px 22px;
+    flex:1;
+  }
+  .card-body h2{
+    font-size:17px;
+    margin:0;
+  }
+  .card-body p{
+    font-size:13.5px;
+    color:var(--ink-soft);
+    line-height:1.5;
+    margin:0;
+    flex:1;
+  }
+  .card-body .play{
+    align-self:flex-start;
+    margin-top:6px;
     font-family:'Archivo',sans-serif;
-    font-weight:800;
-    font-size:14px;
-    padding:14px;
-    border:3px solid #41150a;
-    border-radius:12px;
-    background:var(--bone);
-    color:#41150a;
-    cursor:pointer;
-    box-shadow:0 6px 0 var(--bone-dark), 0 7px 0 #41150a;
+    font-weight:700;
+    font-size:12.5px;
+    letter-spacing:.02em;
+    color:var(--accent-dark);
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
   }
-  .restart:active{transform:translateY(6px);box-shadow:0 0 0 var(--bone-dark), 0 1px 0 #41150a;}
-
-  :focus-visible{outline:3px solid #fff;outline-offset:3px;}
-
-  @media (max-width:420px){
-    .screen{height:360px;}
-    .key{font-size:11px;padding:12px 2px 10px;}
-    .key .glyph{font-size:22px;}
-  }
-
-  @media (prefers-reduced-motion:reduce){
-    *{transition:none !important;animation:none !important;}
-  }
+  .card-body .play .arrow{transition:transform .15s ease;}
+  .card:hover .play .arrow{transform:translateX(3px);}
 </style>
 </head>
 <body>
 
-<h1 class="title">ROCK &middot; PAPER &middot; SCISSORS<br><span>you vs. the computer</span></h1>
+<header>
+  <div class="eyebrow">Browser Arcade</div>
+  <h1>Mini Games</h1>
+</header>
 
-<main class="console" id="console">
-  <div class="brand">
-    <button class="home-btn" id="homeBtn" title="Menu" type="button">☰</button>
-    <span>RPS-3000</span>
-    <b>hand held unit</b>
-  </div>
+<main class="grid">
 
-  <div class="screen">
-    <div class="scorebar">
-      <div class="who"><span>YOU</span><b id="youScore">0</b></div>
-      <div class="mode" id="modeTag">— —</div>
-      <div class="who right"><span>COMPUTER</span><b id="botScore">0</b></div>
+  <a class="card" href="rock-paper-scissors.html">
+    <div class="card-image">
+      <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Rock, paper and scissors illustration">
+        <defs>
+          <linearGradient id="bgGrad" x1="0" y1="0" x2="400" y2="220" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#2b1a3d"/>
+            <stop offset="55%" stop-color="#6a2f4b"/>
+            <stop offset="100%" stop-color="#e2603f"/>
+          </linearGradient>
+          <radialGradient id="rockGrad" cx="35%" cy="30%" r="75%">
+            <stop offset="0%" stop-color="#c9c6cf"/>
+            <stop offset="60%" stop-color="#9a97a3"/>
+            <stop offset="100%" stop-color="#726f7c"/>
+          </radialGradient>
+          <linearGradient id="paperGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="100%" stop-color="#e9e6ee"/>
+          </linearGradient>
+          <linearGradient id="bladeGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#f2f1f5"/>
+            <stop offset="100%" stop-color="#a8a5b1"/>
+          </linearGradient>
+        </defs>
+
+        <rect width="400" height="220" fill="url(#bgGrad)"/>
+        <circle cx="370" cy="20" r="90" fill="#ffffff" opacity="0.05"/>
+        <circle cx="10" cy="210" r="70" fill="#ffffff" opacity="0.06"/>
+
+        <!-- badge shadows -->
+        <ellipse cx="90" cy="176" rx="46" ry="10" fill="#140a1d" opacity="0.28"/>
+        <ellipse cx="200" cy="176" rx="46" ry="10" fill="#140a1d" opacity="0.28"/>
+        <ellipse cx="310" cy="176" rx="46" ry="10" fill="#140a1d" opacity="0.28"/>
+
+        <!-- rock badge -->
+        <circle cx="90" cy="112" r="58" fill="#ffffff" opacity="0.97"/>
+        <g transform="translate(90,112)">
+          <path d="M -30,8 C -33,-10 -17,-24 0,-25 C 17,-26 32,-13 33,3 C 34,18 20,27 1,27 C -14,27 -28,22 -30,8 Z" fill="url(#rockGrad)" stroke="#5f5c68" stroke-width="1.5"/>
+          <path d="M -16,-6 C -10,-12 0,-13 6,-8" stroke="#5f5c68" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.5"/>
+          <ellipse cx="-12" cy="-9" rx="8" ry="4" fill="#ffffff" opacity="0.45" transform="rotate(-18 -12 -9)"/>
+        </g>
+
+        <!-- paper badge -->
+        <circle cx="200" cy="112" r="58" fill="#ffffff" opacity="0.97"/>
+        <g transform="translate(200,112) rotate(-8)">
+          <rect x="-24" y="-30" width="48" height="60" rx="5" fill="url(#paperGrad)" stroke="#c7c3cf" stroke-width="1.5"/>
+          <path d="M 12,-30 L 24,-30 L 24,-18 Z" fill="#d8d4e0"/>
+          <rect x="-14" y="-8" width="28" height="3.5" rx="1.75" fill="#cfc9db"/>
+          <rect x="-14" y="2" width="28" height="3.5" rx="1.75" fill="#cfc9db"/>
+          <rect x="-14" y="12" width="20" height="3.5" rx="1.75" fill="#cfc9db"/>
+        </g>
+
+        <!-- scissors badge -->
+        <circle cx="310" cy="112" r="58" fill="#ffffff" opacity="0.97"/>
+        <g transform="translate(310,120)">
+          <path d="M0,0 L 32,-44 C 38,-48 44,-44 42,-36 L 13,4 Z" fill="url(#bladeGrad)" stroke="#8a8794" stroke-width="1.5"/>
+          <path d="M0,0 L -32,-44 C -38,-48 -44,-44 -42,-36 L -13,4 Z" fill="url(#bladeGrad)" stroke="#8a8794" stroke-width="1.5"/>
+          <circle cx="-15" cy="24" r="13" fill="none" stroke="#e2603f" stroke-width="7"/>
+          <circle cx="15" cy="24" r="13" fill="none" stroke="#e2603f" stroke-width="7"/>
+          <circle cx="0" cy="0" r="4.5" fill="#4a4753"/>
+        </g>
+      </svg>
     </div>
+    <div class="card-body">
+      <h2>Rock Paper Scissors</h2>
+      <p>Classic, sudden death or endless — plus secret weapons, difficulty settings and achievements.</p>
+      <span class="play">Play now <span class="arrow">→</span></span>
+    </div>
+  </a>
 
-    <div class="arena">
-      <div class="side you">
-        <div class="weapon empty" id="youWeapon">❔</div>
-        <div class="label">YOU</div>
+  <!--
+    TEMPLATE — copy this block to add a new game to the grid.
+    1. Duplicate the <a class="card">...</a> block above.
+    2. Point href at the new game's HTML file (e.g. "tic-tac-toe.html"),
+       upload that file alongside this one.
+    3. Replace the <svg> inside .card-image with your own artwork
+       (or swap it for an <img src="your-image.jpg" alt="..."> if you'd
+       rather use a photo/illustration file instead of inline SVG).
+    4. Update the h2 title and p description in .card-body.
+
+    <a class="card" href="new-game.html">
+      <div class="card-image">
+        <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">...</svg>
       </div>
-      <div class="side">
-        <div class="weapon empty" id="botWeapon">❔</div>
-        <div class="label" id="botLabel">COMPUTER</div>
+      <div class="card-body">
+        <h2>New Game</h2>
+        <p>One or two lines describing what it is.</p>
+        <span class="play">Play now <span class="arrow">→</span></span>
       </div>
-      <div class="vs">VS</div>
-      <div class="flash" id="flash"></div>
-    </div>
+    </a>
+  -->
 
-    <div class="banner" id="banner" aria-live="polite">
-      <div class="verdict" id="verdict">MAKE YOUR MOVE</div>
-      <div class="quip" id="quip">Pick a weapon below.</div>
-    </div>
 
-    <div class="gameover" id="gameover">
-      <div class="big" id="goIcon">🏆</div>
-      <div class="msg" id="goMsg">YOU WON THE GAME!</div>
-      <div class="sub" id="goSub">Final score 5 – 2</div>
-    </div>
-
-    <div class="panel" id="startScreen">
-      <h2>RPS-3000</h2>
-      <div class="stats">
-        <div><span>BEST STREAK</span><b id="statStreak">0</b></div>
-        <div><span>GAMES WON</span><b id="statWins">0</b></div>
-      </div>
-      <div class="skinrow" id="skinRow">
-        <button class="swatch" data-skin="sunset" style="background:#E2603F" aria-label="Sunset skin" type="button"></button>
-        <button class="swatch" data-skin="mint" style="background:#3FA793" aria-label="Mint skin" type="button"></button>
-        <button class="swatch" data-skin="grape" style="background:#7C5CC4" aria-label="Grape skin" type="button"></button>
-        <button class="swatch" data-skin="night" style="background:#3A3A42" aria-label="Night skin" type="button"></button>
-      </div>
-      <button class="achv-link" id="openAchv" type="button">🏆 Achievements</button>
-      <button class="mode-btn" id="toDifficulty" type="button">Start<small>Choose a difficulty next</small></button>
-    </div>
-
-    <div class="panel" id="difficulty" style="display:none;">
-      <h2>CHOOSE DIFFICULTY</h2>
-      <button class="mode-btn" data-diff="easy">Easy<small>Computer picks at random</small></button>
-      <button class="mode-btn" data-diff="hard">Hard<small>Computer leans against your habits</small></button>
-    </div>
-
-    <div class="panel" id="modes" style="display:none;">
-      <h2>PICK A GAME MODE</h2>
-      <button class="mode-btn" data-target="5">Classic<small>First to 5 points wins</small></button>
-      <button class="mode-btn" data-target="1">Sudden death<small>One round decides it</small></button>
-      <button class="mode-btn" data-target="Infinity">Endless<small>Play until you stop</small></button>
-      <button class="achv-link" id="backToDiff" type="button">Change difficulty</button>
-    </div>
-
-    <div class="panel" id="achvPanel" style="display:none;">
-      <h2>ACHIEVEMENTS</h2>
-      <div class="achv-list" id="achvList"></div>
-      <button class="mode-btn" id="closeAchv" type="button">Back</button>
-    </div>
-
-    <div class="panel" id="confirmPanel" style="display:none;">
-      <h2>RETURN TO MENU?</h2>
-      <p style="text-align:center;font-size:13px;margin:0 0 4px;">Current game progress will be lost.</p>
-      <button class="mode-btn" id="confirmLeave" type="button">Leave game</button>
-      <button class="mode-btn" id="confirmCancel" type="button">Cancel</button>
-    </div>
-
-    <div class="toast" id="toast"><span class="icon" id="toastIcon">🏆</span><span id="toastText"></span></div>
-  </div>
-
-  <div class="pad">
-    <button class="key" data-move="rock" disabled><span class="glyph">🗿</span>ROCK</button>
-    <button class="key" data-move="paper" disabled><span class="glyph">📃</span>PAPER</button>
-    <button class="key" data-move="scissors" disabled><span class="glyph">✂️</span>SCISSORS</button>
-  </div>
-
-  <div class="typerow">
-    <input id="typed" type="text" placeholder="…or type your move" autocomplete="off" spellcheck="false" disabled>
-    <button id="send" disabled>PLAY</button>
-  </div>
-
-  <p class="footnote">Typos are forgiven. Unconventional weapons are not. (Or are they?)</p>
-
-  <button class="restart" id="restart">PLAY AGAIN</button>
 </main>
 
-<script>
-(function(){
-  "use strict";
-
-  var MOVES = ["rock","paper","scissors"];
-  var GLYPH = {rock:"🗿", paper:"📃", scissors:"✂️"};
-  var BEATS = {rock:"paper", paper:"scissors", scissors:"rock"}; // BEATS[x] = move that beats x
-
-  var BOT_WIN = ["Too easy!!!", "That all you got?", "I predicted that."];
-  var BOT_LOSS = [
-    "Wait… my sensors must be malfunctioning!",
-    "You got lucky. Next time I won't be so nice.",
-    "Impossible! Did you hack my source code?!"
-  ];
-  var BOT_DRAW = [
-    "Great minds think alike… or we're both just basic.",
-    "A stalemate. Fascinating.",
-    "Stop copying my circuits!"
-  ];
-
-  var SECRETS = {
-    nuke:  {glyph:"💣", verb:"YOU DEPLOYED A NUKE",  counterGlyph:"🛡️", counterName:"SHIELD", counterMsg:"🤖 blocked it with a SHIELD!"},
-    gun:   {glyph:"🔫", verb:"YOU PULLED OUT A GUN", counterGlyph:"🧲", counterName:"MAGNET", counterMsg:"🤖 deflected it with a MAGNET!"},
-    laser: {glyph:"⚡", verb:"YOU FIRED A LASER",    counterGlyph:"🪞", counterName:"MIRROR", counterMsg:"🤖 reflected it with a MIRROR!"}
-  };
-  var SECRET_WORDS = Object.keys(SECRETS);
-
-  var ACHIEVEMENTS = [
-    {id:"first_blood", icon:"🥇", title:"First Blood",     desc:"Win your first round."},
-    {id:"nuker",        icon:"💣", title:"Weapons Dealer",  desc:"Use a secret weapon 5 times."},
-    {id:"flawless",     icon:"✨", title:"Flawless Victory",desc:"Win a game without losing a round."},
-    {id:"streak5",      icon:"🔥", title:"On Fire",         desc:"Reach a 5-round win streak."},
-    {id:"streak10",     icon:"⚡", title:"Unstoppable",     desc:"Reach a 10-round win streak."},
-    {id:"veteran",      icon:"🎖️", title:"Veteran",         desc:"Play 25 rounds total."}
-  ];
-
-  // ---------- elements ----------
-  var consoleEl = document.getElementById("console");
-  var youWeapon = document.getElementById("youWeapon");
-  var botWeapon = document.getElementById("botWeapon");
-  var botLabel = document.getElementById("botLabel");
-  var verdictEl = document.getElementById("verdict");
-  var quipEl = document.getElementById("quip");
-  var bannerEl = document.getElementById("banner");
-  var flashEl = document.getElementById("flash");
-  var arenaEl = document.querySelector(".arena");
-  var startScreen = document.getElementById("startScreen");
-  var difficultyPanel = document.getElementById("difficulty");
-  var modesEl = document.getElementById("modes");
-  var achvPanel = document.getElementById("achvPanel");
-  var achvListEl = document.getElementById("achvList");
-  var statStreakEl = document.getElementById("statStreak");
-  var statWinsEl = document.getElementById("statWins");
-  var toastEl = document.getElementById("toast");
-  var toastIconEl = document.getElementById("toastIcon");
-  var toastTextEl = document.getElementById("toastText");
-  var gameoverEl = document.getElementById("gameover");
-  var confirmPanel = document.getElementById("confirmPanel");
-  var goIcon = document.getElementById("goIcon");
-  var goMsg = document.getElementById("goMsg");
-  var goSub = document.getElementById("goSub");
-  var youScoreEl = document.getElementById("youScore");
-  var botScoreEl = document.getElementById("botScore");
-  var modeTagEl = document.getElementById("modeTag");
-  var typedEl = document.getElementById("typed");
-  var sendEl = document.getElementById("send");
-  var restartEl = document.getElementById("restart");
-  var homeBtn = document.getElementById("homeBtn");
-  var keys = Array.prototype.slice.call(document.querySelectorAll(".key"));
-
-  // ---------- persistent save ----------
-  var SAVE_KEY = "rps3000_save_v1";
-  function defaultSave(){
-    return {
-      bestStreak:0, gamesWon:0, roundsPlayed:0, secretsUsed:0, totalRoundWins:0,
-      moveCounts:{rock:0,paper:0,scissors:0},
-      achievements:[], skin:"sunset"
-    };
-  }
-  function loadSave(){
-    try{
-      var raw = localStorage.getItem(SAVE_KEY);
-      if(raw){ return Object.assign(defaultSave(), JSON.parse(raw)); }
-    }catch(e){}
-    return defaultSave();
-  }
-  var save = loadSave();
-  function persist(){
-    try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){}
-  }
-
-  // ---------- game state ----------
-  var target = 5, you = 0, bot = 0, busy = false, over = false;
-  var difficulty = "easy";
-  var streak = 0, roundsLostThisGame = 0;
-  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  function sleep(ms){
-    return new Promise(function(res){ setTimeout(res, reduced ? Math.min(ms,40) : ms); });
-  }
-  function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
-
-  // ---------- synthesized sound effects (no audio files needed) ----------
-  var audioCtx = null;
-  function getAudio(){
-    try{
-      if(!audioCtx){
-        var Ctx = window.AudioContext || window.webkitAudioContext;
-        if(!Ctx){ return null; }
-        audioCtx = new Ctx();
-      }
-      if(audioCtx.state === "suspended"){ audioCtx.resume(); }
-      return audioCtx;
-    }catch(e){ return null; }
-  }
-  function noiseBuffer(ctx, seconds, power){
-    var size = Math.max(1, Math.floor(ctx.sampleRate * seconds));
-    var buffer = ctx.createBuffer(1, size, ctx.sampleRate);
-    var data = buffer.getChannelData(0);
-    for(var i=0;i<size;i++){
-      data[i] = (Math.random()*2-1) * Math.pow(1 - i/size, power || 1);
-    }
-    return buffer;
-  }
-
-  function playNukeSound(){
-    var ctx = getAudio(); if(!ctx){ return; }
-    try{
-      var now = ctx.currentTime;
-      // low sweeping boom
-      var osc = ctx.createOscillator();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(160, now);
-      osc.frequency.exponentialRampToValueAtTime(28, now + 0.65);
-      var oGain = ctx.createGain();
-      oGain.gain.setValueAtTime(0.0001, now);
-      oGain.gain.exponentialRampToValueAtTime(0.55, now + 0.04);
-      oGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.95);
-      osc.connect(oGain); oGain.connect(ctx.destination);
-      osc.start(now); osc.stop(now + 1);
-      // crack of noise on top
-      var noise = ctx.createBufferSource();
-      noise.buffer = noiseBuffer(ctx, 0.4, 2);
-      var filt = ctx.createBiquadFilter();
-      filt.type = "lowpass"; filt.frequency.value = 900;
-      var nGain = ctx.createGain();
-      nGain.gain.setValueAtTime(0.5, now);
-      nGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
-      noise.connect(filt); filt.connect(nGain); nGain.connect(ctx.destination);
-      noise.start(now);
-    }catch(e){}
-  }
-
-  function playGunSound(){
-    var ctx = getAudio(); if(!ctx){ return; }
-    try{
-      var now = ctx.currentTime;
-      var noise = ctx.createBufferSource();
-      noise.buffer = noiseBuffer(ctx, 0.15, 3);
-      var filt = ctx.createBiquadFilter();
-      filt.type = "highpass"; filt.frequency.value = 650;
-      var nGain = ctx.createGain();
-      nGain.gain.setValueAtTime(0.8, now);
-      nGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
-      noise.connect(filt); filt.connect(nGain); nGain.connect(ctx.destination);
-      noise.start(now);
-      var osc = ctx.createOscillator();
-      osc.type = "square";
-      osc.frequency.setValueAtTime(130, now);
-      osc.frequency.exponentialRampToValueAtTime(45, now + 0.1);
-      var oGain = ctx.createGain();
-      oGain.gain.setValueAtTime(0.3, now);
-      oGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
-      osc.connect(oGain); oGain.connect(ctx.destination);
-      osc.start(now); osc.stop(now + 0.1);
-    }catch(e){}
-  }
-
-  function playLaserSound(){
-    var ctx = getAudio(); if(!ctx){ return; }
-    try{
-      var now = ctx.currentTime;
-      var osc = ctx.createOscillator();
-      osc.type = "sawtooth";
-      osc.frequency.setValueAtTime(1900, now);
-      osc.frequency.exponentialRampToValueAtTime(200, now + 0.32);
-      var gain = ctx.createGain();
-      gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(0.32, now + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.start(now); osc.stop(now + 0.36);
-    }catch(e){}
-  }
-
-  var SECRET_SOUNDS = {nuke: playNukeSound, gun: playGunSound, laser: playLaserSound};
-
-  // ---------- skins ----------
-  function applySkin(name){
-    consoleEl.setAttribute("data-skin", name);
-    document.querySelectorAll(".swatch").forEach(function(s){
-      s.classList.toggle("active", s.getAttribute("data-skin") === name);
-    });
-  }
-
-  // ---------- stats / achievements ----------
-  function renderStats(){
-    statStreakEl.textContent = save.bestStreak;
-    statWinsEl.textContent = save.gamesWon;
-  }
-  function renderAchievements(){
-    achvListEl.innerHTML = "";
-    ACHIEVEMENTS.forEach(function(a){
-      var unlocked = save.achievements.indexOf(a.id) > -1;
-      var row = document.createElement("div");
-      row.className = "achv-item" + (unlocked ? "" : " locked");
-      var iconSpan = document.createElement("span");
-      iconSpan.className = "icon";
-      iconSpan.textContent = unlocked ? a.icon : "🔒";
-      var info = document.createElement("span");
-      info.className = "info";
-      var b = document.createElement("b");
-      b.textContent = a.title;
-      var d = document.createElement("span");
-      d.textContent = a.desc;
-      info.appendChild(b);
-      info.appendChild(d);
-      row.appendChild(iconSpan);
-      row.appendChild(info);
-      achvListEl.appendChild(row);
-    });
-  }
-  var toastTimer = null;
-  function showToast(icon, text){
-    toastIconEl.textContent = icon;
-    toastTextEl.textContent = text;
-    toastEl.classList.add("show");
-    if(toastTimer){ clearTimeout(toastTimer); }
-    toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 2200);
-  }
-  function unlock(id){
-    if(save.achievements.indexOf(id) > -1){ return; }
-    save.achievements.push(id);
-    persist();
-    var a = ACHIEVEMENTS.filter(function(x){ return x.id === id; })[0];
-    if(a){ showToast(a.icon, a.title + " unlocked!"); }
-  }
-
-  // ---------- difficulty-aware computer picks ----------
-  function favoriteMove(){
-    var mc = save.moveCounts, best = null, bestCount = 0;
-    MOVES.forEach(function(m){
-      if(mc[m] > bestCount){ bestCount = mc[m]; best = m; }
-    });
-    return best;
-  }
-  function computerPick(){
-    if(difficulty === "hard"){
-      var fav = favoriteMove();
-      if(fav && Math.random() < 0.65){ return BEATS[fav]; }
-    }
-    return pick(MOVES);
-  }
-
-  // Stand-in for Python's difflib.get_close_matches(cutoff=0.6)
-  function closestMove(word){
-    var best = null, bestScore = 0;
-    for(var i=0;i<MOVES.length;i++){
-      var s = similarity(word, MOVES[i]);
-      if(s > bestScore){ bestScore = s; best = MOVES[i]; }
-    }
-    return bestScore >= 0.6 ? best : null;
-  }
-  function similarity(a,b){
-    if(!a.length || !b.length){ return 0; }
-    return 1 - levenshtein(a,b) / Math.max(a.length,b.length);
-  }
-  function levenshtein(a,b){
-    var prev=[], cur=[], i, j;
-    for(j=0;j<=b.length;j++){ prev[j]=j; }
-    for(i=1;i<=a.length;i++){
-      cur[0]=i;
-      for(j=1;j<=b.length;j++){
-        var cost = a.charAt(i-1)===b.charAt(j-1) ? 0 : 1;
-        cur[j] = Math.min(cur[j-1]+1, prev[j]+1, prev[j-1]+cost);
-      }
-      prev = cur.slice();
-    }
-    return prev[b.length];
-  }
-
-  // idle animation: while waiting on the player, both sides gently
-  // rotate through rock/paper/scissors, same as the pre-reveal shuffle.
-  var idleTimer = null, idleIndex = 0;
-  function idleTick(){
-    var icon = GLYPH[MOVES[idleIndex % 3]];
-    idleIndex += 1;
-    youWeapon.className = "weapon";
-    botWeapon.className = "weapon";
-    youWeapon.textContent = icon;
-    botWeapon.textContent = icon;
-    if(!reduced){
-      void youWeapon.offsetWidth;
-      youWeapon.classList.add("pop");
-      botWeapon.classList.add("pop");
-    }
-  }
-  function startIdle(){
-    if(idleTimer){ return; }
-    idleIndex = 0;
-    idleTick();
-    idleTimer = setInterval(idleTick, 550);
-  }
-  function stopIdle(){
-    if(idleTimer){ clearInterval(idleTimer); idleTimer = null; }
-  }
-
-  function setControls(on){
-    keys.forEach(function(k){ k.disabled = !on; });
-    typedEl.disabled = !on;
-    sendEl.disabled = !on;
-    if(on){ startIdle(); } else { stopIdle(); }
-  }
-  function updateScores(){
-    youScoreEl.textContent = you;
-    botScoreEl.textContent = bot;
-  }
-  function setBanner(verdict, quip, cls){
-    verdictEl.textContent = verdict;
-    quipEl.textContent = quip || "";
-    bannerEl.className = "banner" + (cls ? " " + cls : "");
-  }
-  function showWeapon(el, glyph, animate){
-    el.classList.remove("empty","shake","pop","blast","wreck");
-    el.textContent = glyph;
-    if(animate && !reduced){
-      void el.offsetWidth;
-      el.classList.add("pop");
-    }
-  }
-
-  function registerRoundResult(outcome){
-    // outcome: "win" | "lose" | "draw"
-    save.roundsPlayed += 1;
-    if(outcome === "win"){
-      streak += 1;
-      if(streak > save.bestStreak){ save.bestStreak = streak; }
-      if(streak === 5){ unlock("streak5"); }
-      if(streak === 10){ unlock("streak10"); }
-      save.totalRoundWins += 1;
-      if(save.totalRoundWins === 1){ unlock("first_blood"); }
-    } else if(outcome === "lose"){
-      streak = 0;
-      roundsLostThisGame += 1;
-    }
-    if(save.roundsPlayed >= 25){ unlock("veteran"); }
-    persist();
-    renderStats();
-  }
-
-  function checkGameOver(){
-    if(you >= target || bot >= target){
-      over = true;
-      var won = you >= target;
-      if(won){
-        save.gamesWon += 1;
-        if(roundsLostThisGame === 0 && target !== Infinity){ unlock("flawless"); }
-        persist();
-        renderStats();
-      }
-      goIcon.textContent = won ? "🏆" : "🤖";
-      goMsg.textContent = won ? "YOU WON THE GAME!" : "YOU LOST THE GAME";
-      goSub.textContent = "Final score " + you + " – " + bot;
-      gameoverEl.style.display = "flex";
-      setControls(false);
-      restartEl.style.display = "block";
-      restartEl.focus();
-      return true;
-    }
-    return false;
-  }
-
-  async function detonate(targetEl){
-    targetEl.className = "weapon";
-    targetEl.textContent = "💥";
-    void targetEl.offsetWidth;
-    targetEl.classList.add("blast");
-    flashEl.classList.add("go");
-    arenaEl.classList.add("quake");
-    await sleep(1300);
-    flashEl.classList.remove("go");
-    arenaEl.classList.remove("quake");
-    targetEl.className = "weapon wreck";
-    targetEl.textContent = "💨";
-    await sleep(350);
-  }
-
-  async function shuffleReveal(){
-    botWeapon.classList.remove("empty");
-    botWeapon.classList.add("shake");
-    youWeapon.classList.add("shake");
-    for(var i=0;i<6;i++){
-      botWeapon.textContent = GLYPH[MOVES[i % 3]];
-      await sleep(150);
-    }
-    botWeapon.classList.remove("shake");
-    youWeapon.classList.remove("shake");
-  }
-
-  async function suspenseSecret(secret){
-    var frames = ["🗿","📃","✂️", secret.counterGlyph, "🗿","📃"];
-    botWeapon.classList.remove("empty");
-    botWeapon.classList.add("shake");
-    youWeapon.classList.add("shake");
-    for(var i=0;i<frames.length;i++){
-      botWeapon.textContent = frames[i];
-      await sleep(150);
-    }
-    botWeapon.classList.remove("shake");
-    youWeapon.classList.remove("shake");
-  }
-
-  async function playSecretWeapon(word){
-    var secret = SECRETS[word];
-    busy = true;
-    setControls(false);
-
-    save.secretsUsed += 1;
-    persist();
-    if(save.secretsUsed === 5){ unlock("nuker"); }
-
-    showWeapon(youWeapon, secret.glyph, true);
-    getAudio(); // create/resume the audio context now, while we still have the user gesture
-    setBanner(secret.verb, "🤖 calculating a response…");
-    await suspenseSecret(secret);
-
-    // two possible computer responses: the exact counter, or a normal
-    // rock/paper/scissors weapon (which still loses to an illegal weapon).
-    var counterChance = difficulty === "hard" ? 0.35 : 0.15;
-    var countered = Math.random() < counterChance;
-
-    if(countered){
-      showWeapon(botWeapon, secret.counterGlyph, true);
-      botLabel.textContent = secret.counterName;
-      setBanner("COUNTERED! 🤖", secret.counterMsg, "lose");
-      await sleep(650);
-      if(SECRET_SOUNDS[word]){ SECRET_SOUNDS[word](); }
-      await detonate(youWeapon);
-      bot += 1;
-      updateScores();
-      registerRoundResult("lose");
-    } else {
-      var defMove = computerPick();
-      showWeapon(botWeapon, GLYPH[defMove], true);
-      setBanner(secret.verb, "🤖 tries " + defMove.toUpperCase() + "… not enough!");
-      await sleep(600);
-      if(SECRET_SOUNDS[word]){ SECRET_SOUNDS[word](); }
-      await detonate(botWeapon);
-      setBanner("💥 *BOOM* 💥", "The computer has left the building.", "win");
-      you += 1;
-      updateScores();
-      registerRoundResult("win");
-    }
-
-    await sleep(2000);
-    checkGameOver();
-    busy = false;
-    if(!over){ setControls(true); }
-  }
-
-  async function playRound(word){
-    if(busy || over){ return; }
-
-    if(word === ""){
-      setBanner("NO MOVE PICKED", "Choose rock, paper or scissors.");
-      return;
-    }
-    if(word === "q" || word === "quit"){
-      over = true;
-      goIcon.textContent = "👋";
-      goMsg.textContent = "PLAY LATER!!";
-      goSub.textContent = "Final score " + you + " – " + bot;
-      gameoverEl.style.display = "flex";
-      setControls(false);
-      restartEl.style.display = "block";
-      return;
-    }
-    if(SECRET_WORDS.indexOf(word) > -1){
-      await playSecretWeapon(word);
-      return;
-    }
-
-    var human = MOVES.indexOf(word) > -1 ? word : closestMove(word);
-    if(!human){
-      setBanner("NOT A MOVE", "Try rock, paper or scissors.");
-      return;
-    }
-
-    busy = true;
-    setControls(false);
-
-    var comp = computerPick();
-    save.moveCounts[human] = (save.moveCounts[human] || 0) + 1;
-    persist();
-
-    showWeapon(youWeapon, GLYPH[human], true);
-    botWeapon.className = "weapon";
-    botWeapon.textContent = "❔";
-    botLabel.textContent = "COMPUTER";
-    setBanner("ROCK… PAPER… SCISSORS…", "");
-    await sleep(350);
-    await shuffleReveal();
-    showWeapon(botWeapon, GLYPH[comp], true);
-    await sleep(250);
-
-    var outcome;
-    if(human === comp){
-      outcome = "draw";
-      setBanner("DRAW 🤝", "🤖 " + pick(BOT_DRAW));
-    } else if(
-      (human === "rock" && comp === "scissors") ||
-      (human === "paper" && comp === "rock") ||
-      (human === "scissors" && comp === "paper")
-    ){
-      outcome = "win";
-      setBanner("YOU WIN! 🏆", "🤖 " + pick(BOT_LOSS), "win");
-      you += 1;
-    } else {
-      outcome = "lose";
-      setBanner("COMPUTER WINS 🤖", "🤖 " + pick(BOT_WIN), "lose");
-      bot += 1;
-    }
-
-    updateScores();
-    registerRoundResult(outcome);
-    await sleep(2000);
-    var done = checkGameOver();
-    busy = false;
-    if(!done){ setControls(true); }
-  }
-
-  // ---------- input wiring ----------
-  keys.forEach(function(k){
-    k.addEventListener("click", function(){ playRound(k.getAttribute("data-move")); });
-  });
-
-  function submitTyped(){
-    var v = typedEl.value.toLowerCase().trim();
-    typedEl.value = "";
-    playRound(v);
-  }
-  sendEl.addEventListener("click", submitTyped);
-  typedEl.addEventListener("keydown", function(e){
-    if(e.key === "Enter"){ submitTyped(); }
-  });
-
-  document.addEventListener("keydown", function(e){
-    if(document.activeElement === typedEl){ return; }
-    var map = {r:"rock", p:"paper", s:"scissors"};
-    var move = map[e.key.toLowerCase()];
-    if(move){
-      var btn = document.querySelector('.key[data-move="'+move+'"]');
-      if(btn && !btn.disabled){
-        btn.classList.add("pressed");
-        setTimeout(function(){ btn.classList.remove("pressed"); }, 120);
-        playRound(move);
-      }
-    }
-  });
-
-  // ---------- panel navigation ----------
-  function resetArenaVisual(){
-    youWeapon.textContent = "❔"; youWeapon.className = "weapon empty";
-    botWeapon.textContent = "❔"; botWeapon.className = "weapon empty";
-    botLabel.textContent = "COMPUTER";
-    setBanner("MAKE YOUR MOVE", "Pick a weapon below.");
-  }
-
-  document.getElementById("toDifficulty").addEventListener("click", function(){
-    startScreen.style.display = "none";
-    difficultyPanel.style.display = "flex";
-  });
-
-  difficultyPanel.addEventListener("click", function(e){
-    var btn = e.target.closest(".mode-btn");
-    if(!btn){ return; }
-    difficulty = btn.getAttribute("data-diff");
-    difficultyPanel.style.display = "none";
-    modesEl.style.display = "flex";
-  });
-
-  document.getElementById("backToDiff").addEventListener("click", function(){
-    modesEl.style.display = "none";
-    difficultyPanel.style.display = "flex";
-  });
-
-  modesEl.addEventListener("click", function(e){
-    var btn = e.target.closest(".mode-btn");
-    if(!btn){ return; }
-    var raw = btn.getAttribute("data-target");
-    target = raw === "Infinity" ? Infinity : parseInt(raw,10);
-    you = 0; bot = 0; streak = 0; roundsLostThisGame = 0; over = false; busy = false;
-    updateScores();
-    modesEl.style.display = "none";
-    var diffTag = difficulty === "hard" ? "HARD" : "EASY";
-    var modeLabel = target === Infinity ? "ENDLESS" : (target === 1 ? "SUDDEN DEATH" : "CLASSIC");
-    modeTagEl.textContent = diffTag + " · " + modeLabel;
-    resetArenaVisual();
-    setControls(true);
-  });
-
-  document.getElementById("openAchv").addEventListener("click", function(){
-    renderAchievements();
-    startScreen.style.display = "none";
-    achvPanel.style.display = "flex";
-  });
-  document.getElementById("closeAchv").addEventListener("click", function(){
-    achvPanel.style.display = "none";
-    startScreen.style.display = "flex";
-  });
-
-  document.getElementById("skinRow").addEventListener("click", function(e){
-    var btn = e.target.closest(".swatch");
-    if(!btn){ return; }
-    var name = btn.getAttribute("data-skin");
-    save.skin = name;
-    persist();
-    applySkin(name);
-  });
-
-  restartEl.addEventListener("click", function(){
-    gameoverEl.style.display = "none";
-    restartEl.style.display = "none";
-    modeTagEl.textContent = "— —";
-    resetArenaVisual();
-    setControls(false);
-    modesEl.style.display = "flex";
-  });
-
-  function goToMenu(){
-    difficultyPanel.style.display = "none";
-    modesEl.style.display = "none";
-    achvPanel.style.display = "none";
-    confirmPanel.style.display = "none";
-    gameoverEl.style.display = "none";
-    restartEl.style.display = "none";
-    you = 0; bot = 0; over = false; busy = false;
-    updateScores();
-    modeTagEl.textContent = "— —";
-    resetArenaVisual();
-    setControls(false);
-    renderStats();
-    startScreen.style.display = "flex";
-  }
-
-  homeBtn.addEventListener("click", function(){
-    var midGame = !over && (you > 0 || bot > 0) && startScreen.style.display === "none" &&
-                  difficultyPanel.style.display === "none" && modesEl.style.display === "none" &&
-                  achvPanel.style.display === "none";
-    if(midGame){
-      confirmPanel.style.display = "flex";
-      return;
-    }
-    goToMenu();
-  });
-
-  document.getElementById("confirmLeave").addEventListener("click", goToMenu);
-  document.getElementById("confirmCancel").addEventListener("click", function(){
-    confirmPanel.style.display = "none";
-  });
-
-  // ---------- init ----------
-  applySkin(save.skin || "sunset");
-  renderStats();
-  renderAchievements();
-
-})();
-</script>
 </body>
 </html>
